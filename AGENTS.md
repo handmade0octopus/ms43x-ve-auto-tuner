@@ -1,4 +1,4 @@
-# MS43 VE Auto-Tune — Agent Guide
+# MS43X VE auto-tuner — Agent Guide
 
 A local/web tool that auto-tunes the eight MAP-based VE tables (VANOS overlap
 steps 1–8) of a BMW Siemens MS43 ECU running the MS43X custom firmware
@@ -95,7 +95,7 @@ No test fixtures are committed (never commit real ROMs/logs). Local checks:
 ## Build & release
 
 - Windows exe: `build.bat` (PyInstaller onefile, packs `web/`, collects
-  uvicorn + webview submodules). Kill running `MS43VEAutoTune` processes
+  uvicorn + webview submodules). Kill running `MS43XVEAutoTuner` processes
   before rebuilding (file locks).
 - Docker: `deploy/build-container.sh|bat` (build + run on :8080).
 - Releases: push a `v*` tag — the GitHub workflow builds the exe and attaches

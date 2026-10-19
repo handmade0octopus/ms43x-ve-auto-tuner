@@ -1,4 +1,4 @@
-# MS43 VE Auto-Tune
+# MS43X VE auto-tuner
 
 Automatic tuning tool for the **BMW Siemens MS43** ECU running the
 [MS43X custom firmware](https://www.ms4x.net/index.php?title=MS43X_Custom_Firmware)
@@ -6,7 +6,8 @@ in speed-density (MAP) mode. It reads your XDF definition, your ROM binary and
 CSV datalogs, learns how far every cell of the eight MAP-based VE tables
 (VANOS overlap steps 1–8) is off, and produces a ready-to-flash `.bin`.
 
-Created by **[sorek.uk](https://sorek.uk)**.
+Created by **[sorek.uk](https://sorek.uk)** · hosted instance:
+**[ms43x.sorek.uk](https://ms43x.sorek.uk)**
 
 ## The community behind it
 
@@ -49,9 +50,15 @@ This tool only makes sense together with the MS4x community's work:
 
 ## Download & run
 
-### Windows standalone (recommended)
+### Hosted
 
-Grab `MS43VEAutoTune.exe` from the
+Nothing to install — open **[ms43x.sorek.uk](https://ms43x.sorek.uk)**.
+Every browser session is isolated and RAM-only: your ROM and logs are never
+stored on the server.
+
+### Windows standalone
+
+Grab `MS43XVEAutoTuner.exe` from the
 [**Releases**](../../releases) page and double-click it. A dedicated app window
 opens (backed by a local server); closing the window stops the server.
 Nothing is installed; your recent files are remembered in `%LOCALAPPDATA%\MS4X-VE-AutoTune`.
@@ -63,7 +70,7 @@ pip install -r requirements.txt
 python server.py            # app window; --browser or --no-ui also available
 ```
 
-### Docker
+### Docker (your own instance)
 
 ```sh
 # Linux / macOS

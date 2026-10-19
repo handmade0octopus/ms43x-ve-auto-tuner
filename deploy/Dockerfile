@@ -1,5 +1,5 @@
-# MS43 VE Auto-Tune — headless web server image.
-# Build from the project root:  docker build -f deploy/Dockerfile -t ms43-ve-autotune .
+# MS43X VE auto-tuner — headless web server image.
+# Build from the project root:  docker build -f deploy/Dockerfile -t ms43x-ve-auto-tuner .
 # Browser-only sessions: all state lives in RAM per session, nothing is ever
 # written to disk (no volume needed).
 FROM python:3.13-slim

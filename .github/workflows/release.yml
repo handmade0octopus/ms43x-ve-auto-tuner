@@ -23,10 +23,10 @@ jobs:
       - name: Build standalone exe
         run: >
           python -m PyInstaller --onefile --noconsole server.py -i icon.ico
-          -n MS43VEAutoTune --add-data "web;web"
+          -n MS43XVEAutoTuner --add-data "web;web"
           --collect-submodules uvicorn --collect-submodules webview
       - name: Attach to release
         uses: softprops/action-gh-release@v2
         with:
-          files: dist/MS43VEAutoTune.exe
+          files: dist/MS43XVEAutoTuner.exe
           generate_release_notes: true

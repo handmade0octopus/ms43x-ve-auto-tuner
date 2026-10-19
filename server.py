@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-MS43 VE Auto-Tune — local web app (DATASTAR frontend, FastAPI backend).
+MS43X VE auto-tuner — local web app (DATASTAR frontend, FastAPI backend).
 
 Run:  python server.py   ->  opens http://127.0.0.1:<port> in your browser.
-Build: pyinstaller --onefile server.py -n MS43VEAutoTune --add-data "web;web"
+Build: pyinstaller --onefile server.py -n MS43XVEAutoTuner --add-data "web;web"
 
 The 8 VE tables are treated as one 3D histogram (VANOS table blend x MAP x RPM);
 log samples are accumulated into it and per-cell corrections derived.
@@ -38,7 +38,7 @@ from core import (parse_xdf_data, find_ve_family, resolve_axis, LogFile,
                   guess_channels, guess_map_scale, Tuner, read_bytes_robust,
                   write_bytes_robust)
 
-APP_NAME = "MS43 VE Auto-Tune"
+APP_NAME = "MS43X VE auto-tuner"
 APP_VERSION = "2.0.0"
 
 # ----------------------------------------------------------------------------- 

@@ -3,8 +3,8 @@ services:
     build:
       context: ..
       dockerfile: deploy/Dockerfile
-    image: ms43-ve-autotune:latest
-    container_name: ms43x-autotune
+    image: ms43x-ve-auto-tuner:latest
+    container_name: ms43x-ve-auto-tuner
     restart: unless-stopped
     read_only: true
     tmpfs:

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate icon.png + icon.ico for MS43 VE Auto-Tune (run once, output committed)."""
+"""Generate icon.png + icon.ico for MS43X VE auto-tuner (run once, output committed)."""
 import struct
 import sys
 
