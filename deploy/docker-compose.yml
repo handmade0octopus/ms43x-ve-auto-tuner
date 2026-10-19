@@ -1,0 +1,14 @@
+services:
+  ms43x:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile
+    image: ms43-ve-autotune:latest
+    container_name: ms43x-autotune
+    restart: unless-stopped
+    read_only: true
+    tmpfs:
+      - /tmp
+    # loopback only — Caddy on the host is the only intended client
+    ports:
+      - "127.0.0.1:3310:8000"

@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>MS43 VE Auto-Tune</title>
+<link rel="stylesheet" href="/static/style.css">
+<script type="module" src="/static/datastar.js"></script>
+</head>
+<body data-signals='{"xdfPath":"","binPath":"","logPath":"","params":{"rpmMin":300,"rpmMax":7500,"afrMin":10,"afrMax":19,"useClt":true,"cltMin":60,"useTrans":false,"transRpm":2,"transMap":200,"strength":100,"maxChange":15,"minSamples":5,"smoothing":0,"blend":true,"stoich":14.7},"units":"afr","hasXdf":false,"hasBin":false,"hasLogs":false,"channelsOk":false,"hasAnalysis":false}'>
+
+<header>
+  <div class="brand"><span class="logo">VE</span> MS43 VE Auto-Tune <span class="dim">2.0</span></div>
+  <div id="statusbar" class="pills"><!--SERVER:statusbar--></div>
+</header>
+
+<main>
+  <!-- ================= LEFT: controls ================= -->
+  <aside class="controls">
+
+    <section class="card">
+      <h2>1 · Definition &amp; binary</h2>
+      <!--SERVER:xdfrow-->
+      <!--SERVER:binrow-->
+      <div id="definfo" class="dim small"><span class="dim">no definition loaded</span></div>
+    </section>
+
+    <section class="card">
+      <h2>2 · Datalogs</h2>
+      <!--SERVER:logrow-->
+      <div class="small dim">multi-select CSVs in the browser — all logs must share identical headers</div>
+      <div id="loglist" class="loglist"><!--SERVER:loglist--></div>
+      <div id="chanmap"><!--SERVER:chanmap--></div>
+      <div id="optsrow"><!--SERVER:optsrow--></div>
+      <div class="small dim" style="margin-top:4px">tip: you can also drag &amp; drop CSV / XDF / BIN files anywhere on this page</div>
+    </section>
+
+    <section class="card">
+      <h2>3 · Correction source</h2>
+      <div id="corrmode"><!--SERVER:corrmode--></div>
+      <div class="frow" style="margin-top:8px">
+        <label class="small dim">wideband reads <span class="help" data-help="units">?</span></label>
+        <span class="segrow">
+          <button class="seg mini" id="unit-afr" data-class:active="$units === 'afr'" data-on:click="@post('/api/units/afr')">AFR</button>
+          <button class="seg mini" id="unit-lambda" data-class:active="$units === 'lambda'" data-on:click="@post('/api/units/lambda')">Lambda λ</button>
+        </span>
+      </div>
+      <div class="frow" data-show="$units === 'lambda'">
+        <label class="small dim">stoich AFR <span class="help" data-help="stoich">?</span></label>
+        <input type="number" step="0.1" min="11" max="20" data-bind="params.stoich" data-on:change="@post('/api/stoich')">
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>4 · Sample filters</h2>
+      <div class="frow">
+        <label class="small">engine speed <span class="help" data-help="rpm">?</span></label>
+        <span class="pair">
+          <input type="number" data-bind="params.rpmMin" data-on:change="@post('/api/params')">
+          <span class="dim">…</span>
+          <input type="number" data-bind="params.rpmMax" data-on:change="@post('/api/params')">
+          <span class="small dim">rpm</span>
+        </span>
+      </div>
+      <div class="frow">
+        <label class="small">plausible AFR <span class="help" data-help="afrwin">?</span></label>
+        <span class="pair">
+          <input type="number" step="0.5" data-bind="params.afrMin" data-on:change="@post('/api/params')">
+          <span class="dim">…</span>
+          <input type="number" step="0.5" data-bind="params.afrMax" data-on:change="@post('/api/params')">
+          <span class="small dim">AFR</span>
+        </span>
+      </div>
+      <div class="frow">
+        <label class="small">warm engine <span class="help" data-help="clt">?</span></label>
+        <span class="pair">
+          <input type="checkbox" id="useClt" data-bind="params.useClt" data-on:change="@post('/api/params')">
+          <span class="small dim">coolant ≥</span>
+          <input type="number" data-bind="params.cltMin" data-on:change="@post('/api/params')">
+          <span class="small dim">°C</span>
+        </span>
+      </div>
+      <div class="frow">
+        <label class="small">transients <span class="help" data-help="trans">?</span></label>
+        <span class="pair">
+          <input type="checkbox" id="useTrans" data-bind="params.useTrans" data-on:change="@post('/api/params')">
+          <span class="small dim">&gt;</span>
+          <input type="number" step="0.5" data-bind="params.transRpm" data-on:change="@post('/api/params')">
+          <span class="small dim">k rpm/s</span>
+          <input type="number" step="10" data-bind="params.transMap" data-on:change="@post('/api/params')">
+          <span class="small dim">kPa/s</span>
+        </span>
+      </div>
+      <div class="small dim" style="margin-top:8px">extra value rules — keep samples where ALL match
+        <span class="help" data-help="rules">?</span></div>
+      <div id="rulesfrag"><!--SERVER:rulesfrag--></div>
+    </section>
+
+    <section class="card">
+      <h2>5 · Tuning</h2>
+      <div class="frow">
+        <label class="small">strength <span class="help" data-help="strength">?</span></label>
+        <span class="pair">
+          <input type="number" min="5" max="100" data-bind="params.strength" data-on:change="@post('/api/params')">
+          <span class="small dim">%</span>
+        </span>
+      </div>
+      <div class="frow">
+        <label class="small">max change <span class="help" data-help="maxchg">?</span></label>
+        <span class="pair">
+          <input type="number" step="0.5" data-bind="params.maxChange" data-on:change="@post('/api/params')">
+          <span class="small dim">% per cell</span>
+        </span>
+      </div>
+      <div class="frow">
+        <label class="small">min samples <span class="help" data-help="minsamp">?</span></label>
+        <input type="number" data-bind="params.minSamples" data-on:change="@post('/api/params')">
+      </div>
+      <div class="frow">
+        <label class="small">smoothing <span class="help" data-help="smooth">?</span></label>
+        <span class="pair">
+          <input type="number" step="5" data-bind="params.smoothing" data-on:change="@post('/api/params')">
+          <span class="small dim">%</span>
+        </span>
+      </div>
+      <div class="frow">
+        <label class="small">table blend <span class="help" data-help="blend">?</span></label>
+        <span class="pair">
+          <input type="checkbox" id="blend" data-bind="params.blend" data-on:change="@post('/api/params')">
+          <label for="blend" class="small dim">across adjacent VE tables (VANOS)</label>
+        </span>
+      </div>
+    </section>
+
+    <section class="card">
+      <button class="btn accent wide" data-on:click="@post('/api/analyze')"
+              data-attr:disabled="!($hasXdf && $hasBin && $hasLogs && $channelsOk)">Analyze</button>
+      <div class="row">
+        <button class="btn wide" data-on:click="@post('/api/revert')" data-attr:disabled="!$hasAnalysis">Revert tables</button>
+      </div>
+      <!--SERVER:outrows-->
+    </section>
+
+    <section class="card">
+      <h2>Recent files</h2>
+      <div id="recents"><!--SERVER:recents--></div>
+    </section>
+  </aside>
+
+  <!-- ================= RIGHT: results ================= -->
+  <section class="results">
+    <div id="main"><!--SERVER:main--></div>
+  </section>
+</main>
+
+<footer><div id="msglog" class="mono"><!--SERVER:msglog--></div></footer>
+
+<button id="refreshbtn" class="hidden" data-on:click="@post('/api/refresh')"></button>
+<div id="dropzone" class="hidden"><div>drop CSV · XDF · BIN files</div></div>
+
+<!-- hidden file inputs behind the Upload buttons (web mode; also usable on desktop) -->
+<input type="file" id="file-xdf" class="hidden" accept=".xdf">
+<input type="file" id="file-bin" class="hidden" accept=".bin">
+<input type="file" id="file-log" class="hidden" accept=".csv" multiple>
+
+<script>
+// ---- per-control help tooltips (? icons) ----
+var HELP_TEXT = {
+  units: "Unit of the wideband (and AFR target) channels in the log.\nAFR: air-fuel ratio, e.g. 14.7 = stoichiometric.\nLambda: normalized, 1.00 = stoichiometric.\nThe tool converts lambda to AFR internally (lambda × stoich AFR), so filters and targets are always entered in AFR.",
+  stoich: "Stoichiometric AFR of your fuel — used to convert lambda to AFR.\n14.7 for gasoline (E0). E10 ≈ 14.1, E25 ≈ 13.5, E85 ≈ 9.8.",
+  rpm: "Keep only samples inside this engine-speed window.\nUse it to ignore cranking, idle flutter and over-rev spikes that do not represent the cells you are tuning.",
+  afrwin: "Samples whose wideband reading falls outside this window are discarded.\nRemoves sensor artifacts: cold-start rich readings, decel lean spikes and sensor faults. In lambda logs this window is applied after conversion to AFR.",
+  rules: "Keep only samples where ALL of these comparisons are true — e.g. accelerator pedal > 1% keeps only samples where the throttle is actually applied (closed-throttle/idle data does not represent the cells you are tuning).\nNaN/missing values never pass a rule. Rules are combined with the filters above.",
+  inj: "Skips samples with very short injection time — these are deceleration fuel cut (DFCO), where the AFR reading is meaningless because no fuel is actually being injected.",
+  clt: "Skips samples from a cold engine.\nCold enrichment and incomplete combustion skew the measured AFR away from what the VE table predicts, so only properly warmed-up data is used.",
+  trans: "Skips samples taken during rapid throttle/-load changes (tip-in, lift-off).\nDuring transients wall-wetting and manifold filling make steady-state VE invalid. Raise the thresholds to keep more data; lower them for stricter quality.",
+  strength: "How much of the computed correction is applied per pass.\n100% applies the full learned correction at once; 50% applies only half (safer, needs more iterations).",
+  maxchg: "Hard limit on how far any single cell may move in one pass (in %).\nProtects against bad data dragging a cell far away. Typical: 10–15% for the first passes, 5% for cleanup.",
+  minsamp: "Minimum effective sample weight a cell must accumulate before it is modified.\nOne sample contributes at most 1.0 (split between cells when blending). 3–5 gives stable corrections; cells below the threshold are left untouched.",
+  smooth: "Blends each corrected cell slightly with its neighbours.\nReduces speckle from noisy cells, but can smear real local differences. 0 = off; 20–30% for bumpy data.",
+  blend: "The ECU interpolates VE between valve-overlap steps as VANOS moves, so 'active VE table' is fractional (4.3 = 70% table 4 + 30% table 5).\nOn: each sample is split between the two adjacent tables with those weights (recommended — matches real fueling).\nOff: every sample is attributed wholly to the nearest table."
+};
+document.querySelectorAll('.help[data-help]').forEach(function (el) {
+  el.title = HELP_TEXT[el.dataset.help] || '';
+  el.textContent = '?';
+});
+
+// ---- drag & drop onto the page ----
+(function () {
+  var over = 0;
+  var dz = document.getElementById('dropzone');
+  function show(on) {
+    over = Math.max(0, over + (on ? 1 : -1));
+    dz.classList.toggle('hidden', over === 0);
+  }
+  window.addEventListener('dragover', function (e) {
+    e.preventDefault();
+    if (over === 0) show(true);
+  });
+  window.addEventListener('dragenter', function (e) {
+    e.preventDefault();
+    if (over === 0) show(true);
+    over++;
+  });
+  window.addEventListener('dragleave', function (e) {
+    e.preventDefault();
+    show(false);
+  });
+  window.addEventListener('drop', async function (e) {
+    e.preventDefault();
+    over = 0;
+    dz.classList.add('hidden');
+    var files = Array.from(e.dataTransfer.files || []);
+    if (!files.length) return;
+    var fd = new FormData();
+    files.forEach(function (f) { fd.append('files', f, f.name); });
+    var res = await fetch('/api/upload', { method: 'POST', body: fd });
+    await res.text();
+    // server has loaded everything; refresh all fragments through Datastar
+    document.getElementById('refreshbtn').click();
+  });
+})();
+// ---- Upload buttons (hidden file inputs -> /api/upload) ----
+window.uploadPick = function (kind) {
+  var inp = document.getElementById('file-' + kind);
+  if (inp) inp.click();
+};
+document.querySelectorAll('input[type="file"][id^="file-"]').forEach(function (inp) {
+  inp.addEventListener('change', async function () {
+    var files = Array.from(inp.files || []);
+    inp.value = '';
+    if (!files.length) return;
+    var fd = new FormData();
+    files.forEach(function (f) { fd.append('files', f, f.name); });
+    var res = await fetch('/api/upload', { method: 'POST', body: fd });
+    await res.text();
+    document.getElementById('refreshbtn').click();
+  });
+});
+</script>
+
+</body>
+</html>

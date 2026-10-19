@@ -1,0 +1,12 @@
+dist/
+build/
+legacy/
+__pycache__/
+*.pyc
+*.spec
+*.ico
+*.png
+state.json
+uploads/
+.env
+.git/

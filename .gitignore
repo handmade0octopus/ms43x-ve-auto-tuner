@@ -1,0 +1,20 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+
+# Build artifacts
+build/
+dist/
+*.spec
+
+# Local operator notes
+PRIVATE.md
+
+# Local runtime state
+state.json
+uploads/
+.env
+
+# Tooling caches
+.playwright-mcp/

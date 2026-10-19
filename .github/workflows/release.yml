@@ -1,0 +1,32 @@
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  windows-exe:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt pyinstaller pywebview
+      - name: Build standalone exe
+        run: >
+          python -m PyInstaller --onefile --noconsole server.py -i icon.ico
+          -n MS43VEAutoTune --add-data "web;web"
+          --collect-submodules uvicorn --collect-submodules webview
+      - name: Attach to release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/MS43VEAutoTune.exe
+          generate_release_notes: true
