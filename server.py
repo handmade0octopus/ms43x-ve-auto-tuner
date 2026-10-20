@@ -157,14 +157,33 @@ class AppState:
         self._load_store()
 
     # ---- persistence (desktop; no-ops in web mode) ----
+    def _recent_key(self, name):
+        """Canonical identity for dedupe: case-insensitive paths on Windows."""
+        if not WEB_MODE:
+            name = os.path.realpath(os.path.abspath(name))
+        return os.path.normcase(name)
+
     def _load_store(self):
         if WEB_MODE or not self.store:
             return
         try:
             with open(self.store, 'r', encoding='utf-8') as f:
                 data = json.load(f)
-            self.recent = {k: [p for p in data.get('recent', {}).get(k, []) if isinstance(p, str)][:10]
-                           for k in ('xdf', 'bin', 'log')}
+            recent = {}
+            for k in ('xdf', 'bin', 'log'):
+                seen, vals = set(), []
+                for p in data.get('recent', {}).get(k, []):
+                    if not isinstance(p, str):
+                        continue
+                    key = self._recent_key(p)
+                    if key in seen:
+                        continue
+                    seen.add(key)
+                    vals.append(p)
+                    if len(vals) == 10:
+                        break
+                recent[k] = vals
+            self.recent = recent
             self.dirs = {k: data.get('dirs', {}).get(k, '') for k in ('xdf', 'bin', 'log')}
             rules = data.get('rules', [])
             self.rules = [{'col': int(r['col']), 'op': str(r.get('op', '<')),
@@ -200,10 +219,11 @@ class AppState:
     def push_recent(self, kind, name):
         if not WEB_MODE:
             name = os.path.abspath(name)
+        key = self._recent_key(name)
         lst = self.recent.setdefault(kind, [])
-        if name in lst:
-            lst.remove(name)
-        lst.insert(0, name)
+        # Drop every spelling of the same file (case/symlink variants), so a
+        # stale store can't keep showing it several times.
+        lst[:] = [name] + [p for p in lst if self._recent_key(p) != key]
         del lst[10:]
         if not WEB_MODE:
             d = os.path.dirname(name)
@@ -434,9 +454,9 @@ def _add_logs(items):
         STATE.log(f"Log added: {os.path.basename(disp)} ({lf.rows:,} rows, {len(lf.header)} columns)")
         added += 1
     if added:
-        STATE.channels = guess_channels(STATE.logs[0].header)
+        STATE.channels = guess_channels(STATE.logs[0].header, STATE.logs[0].units)
         mi = STATE.channels.get('map')
-        STATE.map_scale = guess_map_scale(STATE.logs[0].header, mi)
+        STATE.map_scale = guess_map_scale(STATE.logs[0].header, mi, STATE.logs[0].units)
         STATE.analysis_valid = False
         STATE.apply_valid = False
         _seed_rules()
@@ -838,11 +858,22 @@ def recents_frag():
         if not lst:
             continue
         chips = []
-        for i, p in enumerate(lst[:5]):
+        seen = set()
+        for i, p in enumerate(lst):
+            label = os.path.basename(p) or p
+            # The chip only shows the basename, so hide repeats of the same
+            # name even when they came in through another path (e.g. the
+            # uploads copy vs. the file picked from disk).
+            visible = label.casefold()
+            if visible in seen:
+                continue
+            seen.add(visible)
             chips.append(
                 f'<button class="chip" title="{esc(p)}" '
                 f'data-on:click="@post(\'/api/recent/{kind}/{i}\')">'
-                f'{esc(os.path.basename(p))}</button>')
+                f'{esc(label)}</button>')
+            if len(chips) == 5:
+                break
         out.append(f'<div class="recentrow"><span class="dim">{labels[kind]}:</span>'
                    f'{"".join(chips)}</div>')
     return f'<div id="recents-in">{"".join(out) or "<span class=\"dim\">no recent files yet</span>"}</div>'
@@ -1467,7 +1498,7 @@ async def api_logs_remove(i: int, signals: dict = Depends(read_signals)):
     if 0 <= i < len(STATE.logs):
         STATE.logs.pop(i)
         if STATE.logs:
-            STATE.channels = guess_channels(STATE.logs[0].header)
+            STATE.channels = guess_channels(STATE.logs[0].header, STATE.logs[0].units)
         else:
             STATE.channels = {}
         STATE.analysis_valid = False
